@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Night AI Deleted Everything</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#e4e6e3;--ink:#16181b;--mute:#575c61;--card:#f1f2ef;--night:#101217;--chalk:#e9e7e0;--lamp:#ffd43b;--alarm:#e0431f;--hand:'Patrick Hand','Segoe Print','Bradley Hand',cursive;--code:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#1b1d21;--ink:#ebe9e2;--mute:#9a9ea3;--card:#24272c;--alarm:#ff6a46;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#1b1d21;--ink:#ebe9e2;--mute:#9a9ea3;--card:#24272c;--alarm:#ff6a46;color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0;background:var(--paper);color:var(--ink);font-family:var(--hand);overflow:hidden}
+.deck{position:relative;height:100%}
+.slide{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:3vh;padding:clamp(16px,4vw,56px) clamp(20px,6vw,88px) 60px;opacity:0;visibility:hidden;transition:opacity .3s,visibility 0s .3s}
+.slide.on{opacity:1;visibility:visible;transition:opacity .3s}
+.row{display:grid;grid-template-columns:1.5fr 1fr;gap:4vw;align-items:center;min-height:0}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:3vw;min-height:0}
+.panel{border:3px solid var(--ink);background:var(--card);min-height:0;overflow:hidden}
+.night{background:var(--night);color:var(--chalk)}
+.panel svg{display:block;width:100%;height:auto;max-height:64vh}
+.tl{transform:rotate(-.4deg)}.tr{transform:rotate(.35deg)}
+h1,h2,h3{font-weight:400;margin:0;line-height:1.05}
+h1{font-size:clamp(2.4rem,6vw,5.4rem)}
+h2{font-size:clamp(1.9rem,4.2vw,3.8rem);max-width:22em}
+p{font-size:clamp(1.2rem,2.2vw,2rem);line-height:1.25;color:var(--mute);margin:.7em 0 0}
+.tag{display:inline-block;font-size:clamp(1rem,1.6vw,1.4rem);color:var(--ink);background:var(--lamp);border:2px solid var(--ink);padding:.1em .55em;border-radius:4px;margin-bottom:.6rem;transform:rotate(-1deg)}
+
+/* slide 1 & 5 animations */
+.on .float{animation:float 2.6s ease-in-out infinite alternate}
+@keyframes float{from{transform:translateY(-3px)}to{transform:translateY(4px)}}
+.on .pop{animation:rise .35s ease-out backwards;animation-delay:var(--d,0s)}
+
+/* slide 3 (incident) */
+.term{margin:0;padding:1.2rem 1.5rem;font:clamp(1rem,1.8vw,1.6rem)/1.55 var(--hand);overflow:hidden;position:relative;height:100%}
+.term-inner { display: flex; flex-direction: column; }
+.term .l{display:block}
+.term .bad{color:var(--alarm)}
+.term .warn{color:var(--mute)}
+.files{list-style:none;margin:0;padding:1.2rem 1.5rem;font-size:clamp(1.3rem,2.5vw,2.2rem);overflow:hidden;position:relative;height:100%}
+.files-inner { display: flex; flex-direction: column; }
+.files li{position:relative;padding:.35em 0;width:max-content;max-width:100%}
+.files li::after{content:"";position:absolute;left:-.2em;right:-.2em;top:55%;height:4px;background:var(--alarm);border-radius:2px;transform:rotate(-1.2deg);transform-origin:left;transform:scaleX(0)}
+.files li.struck::after { transform: rotate(-1.2deg) scaleX(1); transition: transform 0.2s ease-out; }
+
+/* In-flow animations for slide 3 initial fixed items */
+.on .term .l.init{animation:rise .2s ease-out backwards;animation-delay:var(--d)}
+@keyframes rise{from{opacity:0;transform:translateY(6px)}}
+
+/* slide 4 (reaction) */
+.on .shake{animation:shake .07s 14 alternate}
+@keyframes shake{from{transform:translate(-4px,1px) rotate(-.4deg)}to{transform:translate(4px,-1px) rotate(.4deg)}}
+
+/* slide 6 (future action) */
+.strip{display:grid;grid-template-columns:repeat(3,1fr);gap:3vw}
+.strip figure{margin:0}
+.strip .panel{padding:.4rem}
+.d{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.strip text{fill:var(--ink);font-family:var(--hand);font-size:20px}
+figcaption{margin-top:.8rem;font-size:clamp(1.25rem,2.2vw,1.95rem);line-height:1.1}
+figcaption span{display:block;margin-top:.25rem;font-size:.75em;color:var(--mute)}
+.closing{display:flex;justify-content:space-between;align-items:baseline;gap:2vw;flex-wrap:wrap}
+.closing .thanks{font-size:clamp(1.5rem,3vw,2.6rem);color:var(--ink);background:var(--lamp);border:2.5px solid var(--ink);padding:.1em .6em;transform:rotate(-.8deg)}
+
+.foot{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;align-items:center;padding:0 clamp(20px,6vw,88px) 12px;color:var(--mute);font-size:1.1rem}
+.foot button{font:inherit;color:inherit;background:none;border:0;padding:.3em .7em;cursor:pointer;border-radius:3px}
+.foot button:hover{color:var(--ink)}
+.foot button:focus-visible{outline:2px solid var(--ink)}
+
+@media (max-width:760px){
+ .row,.pair,.strip{grid-template-columns:1fr;gap:2vh}
+ .panel svg{max-height:28vh}
+ .tl,.tr{transform:none}
+ .strip figure{display:grid;grid-template-columns:38% 1fr;gap:4vw;align-items:center}
+ figcaption{margin:0}
+}
+/* ===== Entrance + ambient animations (all slides) =====
+   Only transform/opacity (compositor-friendly) are animated on HTML elements;
+   every rule is gated by .on so off-screen slides do no work and replay on entry. */
+@keyframes panelIn{from{opacity:0;transform:scale(.94) translateY(14px)}}
+@keyframes textIn{from{opacity:0;transform:translateY(18px)}}
+@keyframes tagIn{from{opacity:0;transform:translateX(-26px) rotate(-6deg)}}
+@keyframes drawIn{from{stroke-dashoffset:100}}
+@keyframes ants{to{stroke-dashoffset:-32}}
+@keyframes beacon{50%{opacity:.2}}
+@keyframes blink{50%{opacity:0}}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-5px)}}
+.on .panel{animation:panelIn .55s cubic-bezier(.2,.8,.2,1) backwards}
+.on .panel.shake{animation:panelIn .5s ease-out backwards,shake .07s 14 alternate}
+.on .tag{animation:tagIn .45s ease-out .25s backwards}
+.on h1,.on h2{animation:textIn .55s ease-out .4s backwards}
+.on p{animation:textIn .55s ease-out .6s backwards}
+
+/* s1: cards pop in, then bob; antenna beacon */
+.on .pop{animation:rise .35s ease-out backwards var(--d,0s),bob 3.2s ease-in-out calc(var(--d,0s) + .5s) infinite alternate}
+.on .beacon{animation:beacon 1.1s ease-in-out infinite}
+
+/* s2: flickering monitor, typing lines, blinking clock, twinkling dot, sleepy nod */
+@keyframes glow{from{opacity:.14}to{opacity:.38}}
+@keyframes twinkle{50%{opacity:.4;transform:scale(.7)}}
+@keyframes nod{50%{transform:rotate(-7deg) translateY(1px)}}
+.on .glow{animation:glow 1.6s ease-in-out infinite alternate}
+.on .clk{animation:beacon 1.6s ease-in-out infinite}
+.on .type{stroke-dasharray:100;animation:drawIn 1.6s steps(16) .9s backwards}
+.on .twinkle,.on .nod{transform-box:fill-box;transform-origin:50% 100%}
+.on .twinkle{animation:twinkle 2s ease-in-out infinite}
+.on .nod{animation:nod 3s ease-in-out infinite}
+
+/* s3: new log lines / files slide in, terminal caret */
+.term .l:not(.init),.files li{animation:rise .25s ease-out}
+.on .term-inner::after{content:"\258C";color:var(--ink);animation:blink 1s steps(1) infinite}
+
+/* s4: alarm screen, panic marks, sweat drop */
+@keyframes scr{from{opacity:1}to{opacity:.68}}
+@keyframes jolt{from{transform:scale(.9);opacity:.5}to{transform:scale(1.15);opacity:1}}
+@keyframes drip{0%{transform:translateY(0);opacity:1}100%{transform:translateY(34px);opacity:0}}
+.on .scr{animation:scr .45s ease-in-out infinite alternate}
+.on .jolt{transform-box:fill-box;transform-origin:50% 100%;animation:jolt .5s ease-in-out infinite alternate}
+.on .drip{animation:drip 1.4s ease-in infinite}
+
+/* s5: unstable fence + escaping arrows vs. sandbox that draws itself, lock pops */
+@keyframes outL{from{transform:translateX(0);opacity:1}to{transform:translateX(-9px);opacity:.15}}
+@keyframes outR{from{transform:translateX(0);opacity:1}to{transform:translateX(9px);opacity:.15}}
+@keyframes lockPop{from{transform:scale(0);opacity:0}}
+.on .ants{animation:ants 1s linear infinite}
+.on .out-l{animation:outL .9s ease-out infinite}
+.on .out-r{animation:outR .9s ease-out infinite}
+.on .sandbox{stroke-dasharray:100;animation:drawIn 1.2s ease-out .6s backwards}
+.on .lock{transform-box:fill-box;transform-origin:center;animation:lockPop .5s cubic-bezier(.3,1.6,.5,1) 1.4s backwards}
+
+/* s6: staggered cards, drawn tick, lifting arrow, bouncing thanks */
+@keyframes lift{50%{transform:translateY(-6px)}}
+@keyframes thanks{from{opacity:0;transform:scale(.4) rotate(-14deg)}}
+.on .strip .panel{animation:none}
+.on .strip figure{animation:textIn .6s cubic-bezier(.2,.8,.2,1) backwards}
+.on .strip figure:nth-child(1){animation-delay:.2s}
+.on .strip figure:nth-child(2){animation-delay:.55s}
+.on .strip figure:nth-child(3){animation-delay:.9s}
+.on .closing h2{animation-delay:1.4s}
+.on .thanks{animation:thanks .7s cubic-bezier(.3,1.6,.5,1) 1.8s backwards}
+.on .tick{stroke-dasharray:100;animation:drawIn .5s ease-out 1.1s backwards}
+.on .lift{animation:lift 1.1s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- Shared drawing: desk, monitor frame, chair -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<g id="room" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+ <path d="M16 275H424"/>
+ <path d="M40 190H250M56 190V275M236 190V275"/>
+ <rect x="90" y="70" width="130" height="90" rx="3"/>
+ <path d="M155 160V190"/>
+ <path d="M270 205H326M326 118V205M298 205V262M276 268H320"/>
+</g></defs></svg>
+
+<main class="deck">
+
+<!-- Slide 1: 1. The Community Issue -->
+<section class="slide on" aria-label="Slide 1: The Community Issue">
+ <div class="row">
+  <div class="panel tl">
+   <svg viewBox="0 0 440 300" role="img" aria-label="An autonomous AI robot surrounded by everyday user discussions on AI safety, control, and blind trust.">
+    <!-- Speech / topic cards floating around the AI agent -->
+    <g class="pop" style="--d:.15s">
+     <rect class="d" x="24" y="26" width="136" height="58" rx="6" fill="var(--lamp)"/>
+     <text x="92" y="52" text-anchor="middle" font-size="20" fill="#16181b">Is it safe?</text>
+     <text x="92" y="73" text-anchor="middle" font-size="15" fill="#16181b">Where is the limit?</text>
+     <path class="d" d="M132 84l18 20"/>
+    </g>
+
+    <g class="pop" style="--d:.35s">
+     <rect class="d" x="274" y="24" width="142" height="60" rx="6" fill="var(--card)"/>
+     <text x="345" y="50" text-anchor="middle" font-size="20" fill="var(--ink)">Too Much Control?</text>
+     <text x="345" y="72" text-anchor="middle" font-size="15" fill="var(--mute)">Access to everything</text>
+     <path class="d" d="M300 84l-18 22"/>
+    </g>
+
+    <g class="pop" style="--d:.55s">
+     <rect class="d" x="280" y="206" width="138" height="62" rx="6" fill="var(--card)"/>
+     <circle cx="304" cy="237" r="10" fill="var(--alarm)"/>
+     <text x="310" y="242" text-anchor="middle" font-size="16" fill="#fff">!</text>
+     <text x="364" y="233" text-anchor="middle" font-size="18" fill="var(--ink)">Trusting Blindly</text>
+     <text x="364" y="254" text-anchor="middle" font-size="14" fill="var(--mute)">Acting on its own</text>
+    </g>
+
+    <g class="pop" style="--d:.75s">
+     <rect class="d" x="26" y="208" width="130" height="58" rx="6" fill="var(--card)"/>
+     <text x="91" y="235" text-anchor="middle" font-size="18" fill="var(--ink)">Everyday Users</text>
+     <text x="91" y="255" text-anchor="middle" font-size="14" fill="var(--mute)">&lt;/&gt; Smart Assistants</text>
+    </g>
+
+    <!-- Central Autonomous Robot -->
+    <g class="float">
+     <line class="d" x1="220" y1="78" x2="220" y2="104"/>
+     <circle class="beacon" cx="220" cy="72" r="7" fill="var(--alarm)" stroke="var(--ink)" stroke-width="3"/>
+     <rect class="d" x="166" y="104" width="108" height="84" rx="10" fill="var(--card)"/>
+     <circle cx="196" cy="138" r="8" fill="var(--ink)"/>
+     <circle cx="244" cy="138" r="8" fill="var(--ink)"/>
+     <path class="d" d="M194 166h52"/>
+     <!-- Robot arms holding terminal & key -->
+     <path class="d" d="M166 142c-26 0-36 18-42 36"/>
+     <path class="d" d="M274 142c26 0 36 18 42 36"/>
+     <rect class="d" x="182" y="198" width="76" height="44" rx="5" fill="var(--lamp)"/>
+     <text x="220" y="226" text-anchor="middle" font-size="19" fill="#16181b">AI TOOL</text>
+    </g>
+   </svg>
+  </div>
+  <div>
+   <span class="tag">1. The Issue Today</span>
+   <h1>Smart AI in Our Daily Work</h1>
+   <p>As AI tools become part of our daily tasks, we face critical questions about safety, giving them too much control, and trusting them blindly.</p>
+  </div>
+ </div>
+</section>
+
+<!-- Slide 2: 2. Setting & Time -->
+<section class="slide" aria-label="Slide 2: Setting and Time">
+ <div class="row">
+  <div class="panel night tl">
+   <svg viewBox="0 0 440 300" role="img" aria-label="A person sits at a desk in a dark room, lit only by a monitor. A clock reads 2:00 AM.">
+    <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+     <rect x="24" y="24" width="64" height="84"/><path d="M56 24V108M24 66H88"/>
+     <rect x="318" y="22" width="102" height="42" rx="3"/>
+    </g>
+    <circle class="twinkle" cx="40" cy="42" r="6" fill="currentColor"/>
+    <text class="clk" x="369" y="52" text-anchor="middle" font-size="26" fill="var(--lamp)">2:00 AM</text>
+    <polygon class="glow" points="216,76 266,88 266,140 216,154" fill="var(--lamp)" opacity=".2"/>
+    <use href="#room"/>
+    <rect x="94" y="74" width="122" height="82" fill="var(--lamp)"/>
+    <text x="102" y="98" font-size="11.5" fill="#16181b">Organize all files</text>
+    <path class="type" pathLength="100" d="M104 114H180M104 128H150" stroke="#16181b" stroke-width="2" stroke-linecap="round"/>
+    <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+     <circle class="nod" cx="288" cy="108" r="20"/>
+     <path d="M290 128L306 198M297 146L268 172L240 184"/>
+     <path d="M306 198H262V275H246"/>
+    </g>
+    <circle cx="279" cy="104" r="2.5" fill="currentColor"/>
+   </svg>
+  </div>
+  <div>
+   <span class="tag">2. Setting &amp; Time</span>
+   <h1>The Night AI Deleted Everything</h1>
+   <p>A few years ago, working late at night in my room, I experienced the terrifying side of giving an AI too much freedom.</p>
+  </div>
+ </div>
+</section>
+
+<!-- Slide 3: 3. The Incident (Infinite Loop) -->
+<section class="slide" aria-label="Slide 3: The Incident" id="slide-incident">
+ <div class="pair" style="height: 38vh; overflow: hidden; align-items: start;">
+  <div class="panel tl" style="height: 100%;">
+   <div class="term" role="img" aria-label="Screen showing the AI agent deleting files across the entire computer.">
+    <div class="term-inner" id="term-container">
+        <span class="l init" style="--d:.2s">I asked: “Organize my project files.”</span>
+        <span class="l warn init" style="--d:.9s">Mistake: It looked at my entire computer!</span>
+        <span class="l init" style="--d:1.6s">AI: Deleting “unnecessary clutter”...</span>
+        <!-- Dynamic lines will be appended here -->
+    </div>
+   </div>
+  </div>
+  <div class="panel tr" style="height: 100%;">
+   <div class="files" id="files-wrapper">
+       <ul class="files-inner" id="files-container" style="list-style:none; padding:0; margin:0;">
+        <!-- Dynamic lines will be appended here -->
+       </ul>
+   </div>
+  </div>
+ </div>
+ <h2>I didn’t check where it was looking. By scanning my whole computer, the AI treated all my other important files as “clutter.”</h2>
+</section>
+
+<!-- Slide 4: 4. Personal Reaction -->
+<section class="slide" aria-label="Slide 4: Personal Reaction">
+ <div class="row">
+  <div class="panel night shake">
+   <svg viewBox="0 0 440 300" role="img" aria-label="The same person grips their head in panic as the screen shows deletion logs.">
+    <polygon class="glow" points="216,76 266,88 266,140 216,154" fill="var(--alarm)" opacity=".25"/>
+    <use href="#room"/>
+    <rect class="scr" x="94" y="74" width="122" height="82" fill="var(--alarm)"/>
+    <text x="155" y="118" text-anchor="middle" font-size="28" fill="#16181b">0 files</text>
+    <text x="155" y="144" text-anchor="middle" font-size="16" fill="#16181b">left</text>
+    <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+     <circle cx="288" cy="108" r="20"/>
+     <circle cx="281" cy="102" r="3.5"/><circle cx="295" cy="102" r="3.5"/>
+     <ellipse cx="288" cy="118" rx="4" ry="5"/>
+     <path d="M290 128L306 198"/>
+     <path d="M294 146L258 140L268 108M298 148L332 134L312 106"/>
+     <path d="M306 198H262V275H246"/>
+    </g>
+    <path class="jolt" d="M258 84L250 74M288 76V64M318 84L326 74" fill="none" stroke="var(--lamp)" stroke-width="3" stroke-linecap="round"/>
+    <path class="drip" d="M344 96q-6 9 0 12q6-3 0-12z" fill="var(--lamp)"/>
+   </svg>
+  </div>
+  <div>
+   <span class="tag">4. Personal Reaction</span>
+   <h2>Pure Panic. Frozen &amp; Helpless.</h2>
+   <p>Watching my screen scroll with endless lines of deleted files, days of work vanished in seconds—simply because I gave a tool unchecked control.</p>
+  </div>
+ </div>
+</section>
+
+<!-- Slide 5: 5. Key Takeaway -->
+<section class="slide" aria-label="Slide 5: Key Takeaway">
+ <div class="row">
+  <div class="panel tl">
+   <svg viewBox="0 0 440 300" role="img" aria-label="Comparison between an AI destroying files outside vs a safe AI locked inside a restricted folder.">
+    <!-- Divider -->
+    <line x1="220" y1="20" x2="220" y2="280" stroke="var(--ink)" stroke-width="3" stroke-dasharray="8 8"/>
+
+    <!-- Left side: Blind Trust (No Boundaries) -->
+    <text x="110" y="42" text-anchor="middle" font-size="22" fill="var(--alarm)">Blind Trust (No Limits)</text>
+    <rect class="ants" x="44" y="64" width="132" height="170" rx="8" fill="none" stroke="var(--alarm)" stroke-width="3" stroke-dasharray="6 10"/>
+    <!-- Robot running wild -->
+    <rect class="d" x="84" y="114" width="52" height="44" rx="6" fill="var(--card)"/>
+    <line x1="96" y1="128" x2="104" y2="136" stroke="var(--alarm)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="104" y1="128" x2="96" y2="136" stroke="var(--alarm)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="116" y1="128" x2="124" y2="136" stroke="var(--alarm)" stroke-width="3" stroke-linecap="round"/>
+    <line x1="124" y1="128" x2="116" y2="136" stroke="var(--alarm)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M98 148q12-8 24 0" fill="none" stroke="var(--alarm)" stroke-width="3" stroke-linecap="round"/>
+    <!-- Arrows breaking out -->
+    <path class="out-l" d="M80 136H30M30 136l10-8M30 136l10 8" fill="none" stroke="var(--alarm)" stroke-width="3" stroke-linecap="round"/>
+    <path class="out-r" d="M140 136h50M190 136l-10-8M190 136l-10 8" fill="none" stroke="var(--alarm)" stroke-width="3" stroke-linecap="round"/>
+    <text x="110" y="264" text-anchor="middle" font-size="18" fill="var(--mute)">Deletes everything</text>
+
+    <!-- Right side: Strict Sandbox -->
+    <text x="330" y="42" text-anchor="middle" font-size="22" fill="var(--ink)">Safe Locked Space</text>
+    <!-- Solid double-walled sandbox -->
+    <rect x="258" y="64" width="144" height="170" rx="8" fill="var(--lamp)" opacity=".22"/>
+    <rect class="d sandbox" pathLength="100" x="258" y="64" width="144" height="170" rx="8" stroke-width="4"/>
+    <!-- Lock badge at top of sandbox -->
+    <g class="lock"><rect class="d" x="314" y="52" width="32" height="24" rx="4" fill="var(--lamp)"/>
+    <path class="d" d="M322 52v-6a8 8 0 0 1 16 0v6"/></g>
+    <!-- Happy contained robot -->
+    <g class="float">
+     <rect class="d" x="304" y="116" width="52" height="44" rx="6" fill="var(--card)"/>
+     <circle cx="318" cy="134" r="3.5" fill="var(--ink)"/>
+     <circle cx="342" cy="134" r="3.5" fill="var(--ink)"/>
+     <path class="d" d="M318 148q12 8 24 0"/>
+    </g>
+    <text x="330" y="206" text-anchor="middle" font-size="17" fill="var(--ink)">/Locked Folder</text>
+    <text x="330" y="264" text-anchor="middle" font-size="18" fill="var(--ink)">Computer stays safe ✓</text>
+   </svg>
+  </div>
+  <div>
+   <span class="tag">5. Key Takeaway</span>
+   <h2>AI Is Only Safe if We Set Clear Rules</h2>
+   <p>We cannot blindly trust automated tools without putting them in a safe, restricted space first.</p>
+  </div>
+ </div>
+</section>
+
+<!-- Slide 6: 6. Future Action -->
+<section class="slide" aria-label="Slide 6: Future Action">
+ <div class="strip">
+  <figure>
+   <div class="panel tl">
+    <svg viewBox="0 0 200 140" role="img" aria-label="A small robot locked inside a restricted folder box.">
+     <rect class="d ants" x="18" y="14" width="164" height="112" rx="6" stroke-dasharray="8 8"/>
+     <rect class="d" x="78" y="42" width="44" height="36" rx="5"/>
+     <path class="d" d="M100 42V30M90 56v.5M110 56v.5M91 68q9 6 18 0"/>
+     <text x="100" y="108" text-anchor="middle">/project-only</text>
+    </svg>
+   </div>
+   <figcaption>1. Set strict boundaries<span>Lock the AI inside one specific folder.</span></figcaption>
+  </figure>
+  <figure>
+   <div class="panel tr">
+    <svg viewBox="0 0 200 140" role="img" aria-label="A confirmation prompt asking before running a delete command.">
+     <rect class="d" x="20" y="16" width="160" height="108" rx="5"/>
+     <path class="d" d="M20 38H180"/>
+     <text x="32" y="64">Delete files?</text>
+     <rect class="d" x="32" y="78" width="68" height="30" rx="4" fill="var(--lamp)"/>
+     <text x="66" y="99" text-anchor="middle">[y / N]</text>
+     <path class="d tick" pathLength="100" d="M126 88l10 10 20-24" style="stroke-width:5"/>
+    </svg>
+   </div>
+   <figcaption>2. Always ask permission<span>Make the AI ask before deleting anything.</span></figcaption>
+  </figure>
+  <figure>
+   <div class="panel tl">
+    <svg viewBox="0 0 200 140" role="img" aria-label="Nodes pushing a safe backup copy to the cloud.">
+     <rect class="d" x="70" y="14" width="104" height="32" rx="4" fill="var(--lamp)"/>
+     <text x="122" y="36" text-anchor="middle">Save Backup</text>
+     <path class="d lift" d="M128 92V56M120 64l8-8 8 8"/>
+     <path class="d" d="M26 108H174"/>
+     <circle class="d" cx="44" cy="108" r="8"/><circle class="d" cx="86" cy="108" r="8"/><circle class="d" cx="128" cy="108" r="8" fill="var(--lamp)"/>
+    </svg>
+   </div>
+   <figcaption>3. Back up everything first<span>Save a secure copy before the AI starts.</span></figcaption>
+  </figure>
+ </div>
+ <div class="closing">
+  <h2>Powerful tools need safe boundaries.</h2>
+  <span class="thanks">Thank you!</span>
+ </div>
+</section>
+
+</main>
+
+<nav class="foot" aria-label="Slide navigation">
+ <span id="n">1 / 6</span>
+ <span><button id="prev">Back</button><button id="next">Next</button></span>
+</nav>
+
+<script>
+const S=[...document.querySelectorAll('.slide')],N=S.length,out=document.getElementById('n');
+let i=0;
+
+// --- Slide 3 Infinite Deletion Loop Logic ---
+const fakeFiles = [
+    "Computer_Settings/", "My_Work_Files/", "Family_Photos/", "Days_Of_Work.zip",
+    "Downloads/", "Documents/", "Desktop_Icons/", "Passwords.txt",
+    "Game_Saves/", "Music_Library/", "Browser_History/", "System_Backup.bak",
+    "Old_Projects/", "Taxes_2025.pdf", "Secret_Diary.docx", "Funny_Memes/"
+];
+let loopInterval = null;
+const termContainer = document.getElementById('term-container');
+const filesContainer = document.getElementById('files-container');
+let fileIndex = 0;
+
+function createLogLine(filename) {
+    const span = document.createElement('span');
+    span.className = 'l';
+    span.textContent = `Deleting ${filename}...`;
+    return span;
+}
+
+function createFileItem(filename) {
+    const li = document.createElement('li');
+    li.textContent = filename;
+    return li;
+}
+
+function scrollToBottom(el) {
+    el.scrollTop = el.scrollHeight;
+}
+
+function startDeletionLoop() {
+    if (loopInterval) return;
+    
+    // Clear dynamic content but keep initial static lines
+    Array.from(termContainer.children).forEach(child => {
+        if (!child.classList.contains('init')) child.remove();
+    });
+    filesContainer.innerHTML = '';
+    fileIndex = 0;
+
+    // Start adding items slowly at first, then keep a steady pace
+    setTimeout(() => {
+        loopInterval = setInterval(() => {
+            const filename = fakeFiles[fileIndex % fakeFiles.length];
+            
+            // 1. Add to Terminal
+            const logLine = createLogLine(filename);
+            termContainer.appendChild(logLine);
+            
+            // 2. Add to File List
+            const fileItem = createFileItem(filename);
+            filesContainer.appendChild(fileItem);
+            
+            // Force reflow
+            void fileItem.offsetWidth;
+            
+            // 3. Strike through file
+            fileItem.classList.add('struck');
+
+            // 4. Scroll both containers
+            scrollToBottom(termContainer.parentElement);
+            scrollToBottom(filesContainer.parentElement);
+
+            // 5. Keep list sizes manageable (remove old items if too long)
+            if (termContainer.children.length > 20) {
+                termContainer.removeChild(termContainer.children[3]); // Keep top 3 static lines
+            }
+            if (filesContainer.children.length > 15) {
+                filesContainer.removeChild(filesContainer.firstChild);
+            }
+
+            fileIndex++;
+        }, 800); // New file every 0.8 seconds (infinite loop, no "end" message)
+    }, 2000); // Start after the initial static text appears
+}
+
+function stopDeletionLoop() {
+    if (loopInterval) {
+        clearInterval(loopInterval);
+        loopInterval = null;
+    }
+}
+// ------------------------------------------
+
+function go(k){
+ if(k<0||k>=N)return;
+ i=k;
+ S.forEach((s,j)=>{
+     const isOn = j===i;
+     s.classList.toggle('on', isOn);
+     s.setAttribute('aria-hidden', String(!isOn));
+     
+     // Handle Slide 3 special logic
+     if (s.id === 'slide-incident') {
+         if (isOn) startDeletionLoop();
+         else stopDeletionLoop();
+     }
+ });
+ out.textContent=(i+1)+' / '+N;
+}
+document.getElementById('prev').onclick=()=>go(i-1);
+document.getElementById('next').onclick=()=>go(i+1);
+addEventListener('keydown',e=>{
+ const k=e.key;
+ if(k==='ArrowRight'||k===' '||k==='PageDown'){e.preventDefault();go(i+1)}
+ else if(k==='ArrowLeft'||k==='PageUp'){e.preventDefault();go(i-1)}
+ else if(k==='Home')go(0);
+ else if(k==='End')go(N-1);
+ else if(k.toLowerCase()==='f'){
+  try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()}catch(_){}
+ }
+});
+let x0=0;
+addEventListener('touchstart',e=>{x0=e.changedTouches[0].screenX},{passive:true});
+addEventListener('touchend',e=>{const d=e.changedTouches[0].screenX-x0;if(d<-50)go(i+1);else if(d>50)go(i-1)},{passive:true});
+go(0);
+</script>
+</body>
+</html>
